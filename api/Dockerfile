@@ -12,6 +12,10 @@ RUN pip install --no-cache-dir \
     mysql-connector-python \
     pymongo
 
-COPY main.py /app/main.py
+RUN useradd -u 1001 -M -s /bin/false app-user
+
+COPY --chown=1001:1001 main.py /app/main.py
+
+USER 1001
 
 EXPOSE 8000

@@ -49,7 +49,7 @@ Valide que la collection `posts` contient **exactement 5 documents**
 mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} \
   -h localhost -D ${MYSQL_DATABASE} \
   -e "SELECT COUNT(*) FROM utilisateurs" | \
-  grep -E '^[0-9]' && echo 'SUCCÈS: Table utilisateurs vérifiée' || exit 1
+  grep -E '^[1-9]' && echo 'SUCCÈS: Table utilisateurs vérifiée' || exit 1
 ```
 Valide que la table `utilisateurs` est accessible et contient des données
 
