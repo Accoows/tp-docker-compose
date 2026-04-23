@@ -48,8 +48,8 @@ Valide que la collection `posts` contient **exactement 5 documents**
 ```bash
 mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} \
   -h localhost -D ${MYSQL_DATABASE} \
-  -e "SELECT COUNT(*) as count FROM utilisateurs" | \
-  grep -E '[0-9]' && echo 'SUCCÈS: Table utilisateurs vérifiée' || exit 1
+  -e "SELECT COUNT(*) FROM utilisateurs" | \
+  grep -E '^[0-9]' && echo 'SUCCÈS: Table utilisateurs vérifiée' || exit 1
 ```
 Valide que la table `utilisateurs` est accessible et contient des données
 
@@ -97,8 +97,8 @@ Retourne les utilisateurs depuis **MySQL** :
 - **Volumes nommés** : `mongo_data` et `mysql_data` assurent la persistance
 - **Pas de mot de passe en dur** : Tous les secrets viennent du `.env`
 - **Isolation réseau** : 
-  - ✓ Bases (MongoDB, MySQL) **non publiées** sur l'hôte → uniquement réseau interne
-  - ✓ Seules interfaces web + API sont exposées (`9081`, `9080`, `9000`)
+  - Bases (MongoDB, MySQL) **non publiées** sur l'hôte → uniquement réseau interne
+  - Seules interfaces web + API sont exposées (`9081`, `9080`, `9000`)
 
 ---
 
@@ -139,8 +139,8 @@ tp-docker-compose/
 ## Installation et Déploiement
 
 ### Prérequis
-- Docker Engine ≥ 20.10
-- Docker Compose ≥ 1.29
+- Docker Engine >= 20.10
+- Docker Compose >= 1.29
 
 ### Étapes
 
@@ -180,7 +180,7 @@ docker compose down -v
 
 ---
 
-## 🧪 Tests des Routes Hybrides
+## Tests des Routes Hybrides
 
 ### Vérifier l'état global
 ```bash
@@ -210,7 +210,7 @@ curl http://localhost:9000/users
 
 ---
 
-## 📸 Captures d'écran - Livrable
+## Captures d'écran - Livrable
 
 ### 1. État des services (docker compose ps)
 ![Docker Compose PS](images/docker-ps.png)
@@ -222,16 +222,20 @@ curl http://localhost:9000/users
 
 ### 3. Route hybride `/posts` - MongoDB
 ![Route Posts](images/image-2.png)
+
 *Affiche 5 articles depuis la collection MongoDB `blog_db.posts` avec count = 5*
 
 ### 4. Route hybride `/users` - MySQL
 ![Route Users](images/image-3.png)
+
 *Affiche 5 utilisateurs depuis la table MySQL `ynov_ci.utilisateurs` avec count = 5*
 
 ### 5. Interface Adminer
 ![Route Users](images/image-5.png)
+
 *Affiche l'interface de Adminer pour vérifer que cela fonctionne*
 
 ### 6. Affichage des posts (`blog_db`)
 ![Route Users](images/image-6.png)
+
 *Affiche la liste de tout les posts existants sur mongodb*
