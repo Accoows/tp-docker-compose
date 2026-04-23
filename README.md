@@ -20,26 +20,6 @@ Cette stack orchestre **5 services** via un unique `docker-compose.yml` :
 | **admin_mysql** | Interface | Adminer | Gestion visuelle MySQL |
 | **api** | Application | FastAPI (Python) | Pont hybride MongoDB ↔ MySQL |
 
-### Topologie réseau
-
-```
-┌─────────────────────────────────────────────────┐
-│         Réseau interne (app-network)            │
-├─────────────────────────────────────────────────┤
-│  db_mongo (27017)      db_mysql (3306)          │
-│  └─ mongo_data volume  └─ mysql_data volume    │
-│        ▲                      ▲                 │
-│        │                      │                 │
-│        └─────────────────┬────┘                 │
-│                          │                      │
-│  admin_mongo       admin_mysql          api     │
-│  (9081)→8081       (9080)→8080      (9000)→8000│
-│  ↓ depends_on      ↓ depends_on      ↓ depends │
-└─────────────────────────────────────────────────┘
-         ↓                ↓
-     Hôte : ports exposés uniquement pour interfaces web + API
-```
-
 ---
 
 ## Contraintes Techniques Respectées
