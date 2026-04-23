@@ -1,0 +1,145 @@
+services:
+  db_mongo:
+    build:
+      context: ./mongo
+      dockerfile: Dockerfile
+    container_name: mongo-blog
+    restart: on-failure
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: ${MONGODB_INITDB_ROOT_USERNAME}
+      MONGODB_INITDB_ROOT_PASSWORD: ${MONGODB_INITDB_ROOT_PASSWORD}
+      MONGODB_INITDB_DATABASE: ${MONGODB_INITDB_DATABASE}
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo/db.js:/docker-entrypoint-initdb.d/db.js
+    networks:
+      - app-network
+    healthcheck:
+      test: 
+        - CMD
+        - /bin/bash
+        - -c
+        - |
+          mongosh -u "$MONGODB_INITDB_ROOT_USERNAME" -p "$MONGODB_INITDB_ROOT_PASSWORD" --authenticationDatabase admin \
+          --quiet --eval "db.getSiblingDB('blog_db').posts.countDocuments()" | \
+          grep -q -E '^5$' && echo 'SUCCÈS: 5 posts trouvés' || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  db_mysql:
+    image: mysql:9.6
+    container_name: mysql-db
+    restart: on-failure
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sqlfiles:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - |
+          mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} -h localhost -D ${MYSQL_DATABASE} \
+          -e "SELECT COUNT(*) as count FROM utilisateurs" | grep -E '[0-9]' && \
+          echo 'SUCCÈS: Table utilisateurs vérifiée' || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  admin_mongo:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: on-failure
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
+      ME_CONFIG_MONGODB_URL: ${ME_CONFIG_MONGODB_URL}
+      ME_CONFIG_BASICAUTH: ${ME_CONFIG_BASICAUTH}
+    ports:
+      - "9081:8081"
+    depends_on:
+      db_mongo:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8081"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  admin_mysql:
+    image: adminer:latest
+    container_name: adminer-sql
+    restart: on-failure
+    ports:
+      - "9080:8080"
+    depends_on:
+      db_mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: fastapi-app
+    restart: on-failure
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: ${MONGODB_INITDB_ROOT_USERNAME}
+      MONGODB_INITDB_ROOT_PASSWORD: ${MONGODB_INITDB_ROOT_PASSWORD}
+      MONGODB_INITDB_DATABASE: ${MONGODB_INITDB_DATABASE}
+      MONGO_URL: ${MONGO_URL}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "9000:8000"
+    depends_on:
+      db_mongo:
+        condition: service_healthy
+      db_mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:8000/health
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+    driver: local
+  mysql_data:
+    driver: local
