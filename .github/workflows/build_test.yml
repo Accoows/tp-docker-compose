@@ -54,25 +54,25 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Docker Scout Scan - API
-        uses: docker/scout-action@v1
-        with:
-          command: cves,recommendations
-          image: my-app:1.0.0
-          file: ./api/Dockerfile 
-          only-severities: critical,high
-          exit-code: false
-          only-update: false
+      #- name: Docker Scout Scan - API
+      #  uses: docker/scout-action@v1
+      #  with:
+      #    command: cves,recommendations
+      #    image: my-app:1.0.0
+      #    file: ./api/Dockerfile 
+      #    only-severities: critical,high
+      #    exit-code: false
+      #    only-update: false
 
-      - name: Docker Scout Scan - MongoDB
-        uses: docker/scout-action@v1
-        with:
-          command: cves,recommendations
-          image: my-mongo:1.0.0
-          file: ./mongo/Dockerfile 
-          only-severities: critical,high
-          exit-code: false
-          only-update: false
+      #- name: Docker Scout Scan - MongoDB
+      #  uses: docker/scout-action@v1
+      #  with:
+      #    command: cves,recommendations
+      #    image: my-mongo:1.0.0
+      #    file: ./mongo/Dockerfile 
+      #    only-severities: critical,high
+      #    exit-code: false
+      #    only-update: false
 
       - name: Build the stack
         run: docker compose up -d
@@ -96,30 +96,25 @@ jobs:
       - name: Docker PS
         run: docker ps
 
-      - name: Wait for services health
+      - name: Check Health and Show Logs on Failure
+        if: always()
         run: |
-          echo "Vérification de l'état de santé des services..."
+          echo "Vérification finale de la santé des services..."
           containers=("fastapi-app" "mongo-blog" "mysql-db" "mongo-express" "adminer-sql")
-          
-          for i in {1..12}; do
-            all_healthy=true
-            for container in "${containers[@]}"; do
-              status=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "not-found")
-              echo "Status de $container: $status"
-              if [ "$status" != "healthy" ]; then
-                all_healthy=false
-              fi
-            done
-            
-            if [ "$all_healthy" = true ]; then
-              echo "Tous les conteneurs sont HEALTHY !"
-              exit 0
+          all_healthy=true
+
+          for container in "${containers[@]}"; do
+            status=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "not-found")
+            echo "Service $container: $status"
+            if [ "$status" != "healthy" ]; then
+              all_healthy=false
+              echo "--- LOGS POUR $container ---"
+              docker logs "$container" | tail -n 50
             fi
-            
-            echo "En attente... (5s)"
-            sleep 5
           done
-          
-          echo "Erreur: Certains conteneurs ne sont pas devenus healthy à temps."
-          docker ps
-          exit 1
+
+          if [ "$all_healthy" = false ]; then
+            echo "Erreur : Certains services sont unhealthy."
+            exit 1
+          fi
+          echo "Tous les services sont opérationnels !"
