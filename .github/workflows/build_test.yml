@@ -96,25 +96,33 @@ jobs:
       - name: Docker PS
         run: docker ps
 
-      - name: Check Health and Show Logs on Failure
+      - name: Check Health and Show Logs
         if: always()
         run: |
-          echo "Vérification finale de la santé des services..."
+          echo "Vérification de l'état de santé des 5 services..."
           containers=("fastapi-app" "mongo-blog" "mysql-db" "mongo-express" "adminer-sql")
-          all_healthy=true
-
-          for container in "${containers[@]}"; do
-            status=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "not-found")
-            echo "Service $container: $status"
-            if [ "$status" != "healthy" ]; then
-              all_healthy=false
-              echo "--- LOGS POUR $container ---"
-              docker logs "$container" | tail -n 50
+          
+          for i in {1..12}; do
+            all_healthy=true
+            for container in "${containers[@]}"; do
+              status=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "not-found")
+              echo "Service $container: $status"
+              if [ "$status" != "healthy" ]; then
+                all_healthy=false
+              fi
+            done
+            
+            if [ "$all_healthy" = true ]; then
+              echo "Succès : Tout est au vert !"
+              exit 0
             fi
+            echo "Attente de 5s (essai $i/12)..."
+            sleep 5
           done
-
-          if [ "$all_healthy" = false ]; then
-            echo "Erreur : Certains services sont unhealthy."
-            exit 1
-          fi
-          echo "Tous les services sont opérationnels !"
+          
+          echo "ÉCHEC : Affichage des logs de l'API pour debug :"
+          docker logs fastapi-app --tail 100
+          
+          echo "--- État des conteneurs ---"
+          docker ps -a
+          exit 1
