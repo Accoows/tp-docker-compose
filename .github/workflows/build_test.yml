@@ -36,11 +36,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image
-        run: docker build -t my-app:1.0.0 -f ./api/Dockerfile ./api
+      - name: Build API image
+        run: docker build -t ${{ vars.DOCKERHUB_USERNAME }}/my-app:1.0.0 -f ./api/Dockerfile ./api
 
       - name: Build Custom Mongo image
-        run: docker build -t my-mongo:1.0.0 -f ./mongo/Dockerfile ./mongo
+        run: docker build -t ${{ vars.DOCKERHUB_USERNAME }}/my-mongo:1.0.0 -f ./mongo/Dockerfile ./mongo
 
       - name: Run Tests
         env:
@@ -126,3 +126,9 @@ jobs:
           echo "--- État des conteneurs ---"
           docker ps -a
           exit 1
+
+      - name: Push API image to Docker Hub
+        run: docker push ${{ vars.DOCKERHUB_USERNAME }}/my-app:1.0.0
+
+      - name: Push Mongo image to Docker Hub
+        run: docker push ${{ vars.DOCKERHUB_USERNAME }}/my-mongo:1.0.0
