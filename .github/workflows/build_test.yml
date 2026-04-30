@@ -39,17 +39,29 @@ jobs:
       - name: Build image
         run: docker build -t my-app:1.0.0 -f ./api/Dockerfile ./api
 
+      - name: Build Custom Mongo image
+        run: docker build -t my-mongo:1.0.0 -f ./mongo/Dockerfile ./mongo
+
       - name: Run Tests
         env:
           MONGO_URL: mongodb://localhost:27017
         run: |
           echo "Tests terminés avec succès"
 
-      - name: Docker Scout Scan
+      - name: Docker Scout Scan - API
         uses: docker/scout-action@v1
         with:
           command: cves
           image: my-app:1.0.0
           file: ./api/Dockerfile 
           only-severities: critical,high
-          exit-code: true          
+          exit-code: true
+
+      - name: Docker Scout Scan - MongoDB
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: my-mongo:1.0.0
+          file: ./mongo/Dockerfile 
+          only-severities: critical,high
+          exit-code: true         
