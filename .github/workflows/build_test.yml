@@ -36,16 +36,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and Tag API image
+      - name: Build and Tag images
         run: |
-          docker build -t my-app:1.0.0 \
-                       -t ${{ vars.DOCKERHUB_USERNAME }}/my-app:v${{ github.run_number }} \
+          docker build -t ${{ vars.DOCKERHUB_USERNAME }}/my-app:v${{ github.run_number }}-${{ github.run_id }} \
+                       -t ${{ vars.DOCKERHUB_USERNAME }}/my-app:latest \
+                       -t my-app:1.0.0 \
                        -f ./api/Dockerfile ./api
 
-      - name: Build and Tag Mongo image
-        run: |
-          docker build -t my-mongo:1.0.0 \
-                       -t ${{ vars.DOCKERHUB_USERNAME }}/my-mongo:v${{ github.run_number }} \
+          docker build -t ${{ vars.DOCKERHUB_USERNAME }}/my-mongo:v${{ github.run_number }}-${{ github.run_id }} \
+                       -t ${{ vars.DOCKERHUB_USERNAME }}/my-mongo:latest \
+                       -t my-mongo:1.0.0 \
                        -f ./mongo/Dockerfile ./mongo
 
       - name: Run Tests
@@ -135,8 +135,8 @@ jobs:
 
       - name: Push images to Docker Hub
         run: |
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/my-app:v${{ github.run_number }}
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/my-mongo:v${{ github.run_number }}
-          
-          docker tag ${{ vars.DOCKERHUB_USERNAME }}/my-app:v${{ github.run_number }} ${{ vars.DOCKERHUB_USERNAME }}/my-app:latest
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/my-app:v${{ github.run_number }}-${{ github.run_id }}
           docker push ${{ vars.DOCKERHUB_USERNAME }}/my-app:latest
+          
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/my-mongo:v${{ github.run_number }}-${{ github.run_id }}
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/my-mongo:latest
