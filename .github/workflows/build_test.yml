@@ -24,15 +24,14 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install Pytest
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pymongo  # On installe manuellement ce dont on a besoin
+          pip install pymongo pytest
 
-      - name: Check MongoDB
+      - name: Check MongoDB (via Docker container)
         run: |
-          sudo apt-get update && sudo apt-get install -y mongodb-mongosh
-          mongosh --host localhost --port 27017 --eval "db.adminCommand('ping')"
+          docker run --network host --rm mongo:latest mongosh --host localhost --port 27017 --eval "db.adminCommand('ping')"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
