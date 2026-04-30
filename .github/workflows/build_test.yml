@@ -1,12 +1,20 @@
 name: Build and Test Application
 on:
-  push: 
+  push:
     branches: [ main ]
-  pull_request: 
+  pull_request:
     branches: [ main ]
+
 jobs:
   build_test:
     runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,15 +24,25 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
+          cache-dependency-path: 'api/requirements.txt'
 
-      - name: Check MongoDB and Seed Data
+      - name: Install dependencies
+        run: |
+          pip install -r api/requirements.txt
+          pip install pytest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: docker build -t my-app:1.0.0 -f ./api/Dockerfile ./api
+
+      - name: Check MongoDB and Run Tests
+        env:
+          MONGO_URL: mongodb://localhost:27017 
         run: |
           sudo apt-get install -y mongodb-clients
           mongo --host localhost --port 27017 --eval "db.adminCommand('ping')"
           
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build image for scanning
-        run: docker build -t my-app:1.0.0 -f ./api/Dockerfile ./api
-      
+          # Lancement des tests
+          cd api && pytest
