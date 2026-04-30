@@ -76,6 +76,22 @@ jobs:
 
       - name: Build the stack
         run: docker compose up -d
+        env:
+          MONGODB_INITDB_ROOT_USERNAME: ${{ vars.MONGODB_INITDB_ROOT_USERNAME }}
+          MONGODB_INITDB_DATABASE: ${{ vars.MONGODB_INITDB_DATABASE }}
+          MYSQL_DATABASE: ${{ vars.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ vars.MYSQL_USER }}
+          MYSQL_HOST: ${{ vars.MYSQL_HOST }}
+          ME_CONFIG_MONGODB_ADMINUSERNAME: ${{ vars.MONGODB_INITDB_ROOT_USERNAME }}
+          ME_CONFIG_BASICAUTH: ${{ vars.ME_CONFIG_BASICAUTH }}
+          
+          MONGODB_INITDB_ROOT_PASSWORD: ${{ secrets.MONGODB_INITDB_ROOT_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          ME_CONFIG_MONGODB_ADMINPASSWORD: ${{ secrets.MONGODB_INITDB_ROOT_PASSWORD }}
+          
+          ME_CONFIG_MONGODB_URL: mongodb://${{ vars.MONGODB_INITDB_ROOT_USERNAME }}:${{ secrets.MONGODB_INITDB_ROOT_PASSWORD }}@db_mongo:27017/
+          MONGO_URL: mongodb://${{ vars.MONGODB_INITDB_ROOT_USERNAME }}:${{ secrets.MONGODB_INITDB_ROOT_PASSWORD }}@db_mongo:27017/${{ vars.MONGODB_INITDB_DATABASE }}?authSource=admin
 
       - name: Docker PS
         run: docker ps
