@@ -62,7 +62,7 @@ jobs:
           file: ./api/Dockerfile 
           only-severities: critical,high
           exit-code: false
-          only-update: true
+          only-update: false
 
       - name: Docker Scout Scan - MongoDB
         uses: docker/scout-action@v1
@@ -72,4 +72,38 @@ jobs:
           file: ./mongo/Dockerfile 
           only-severities: critical,high
           exit-code: false
-          only-update: true
+          only-update: false
+
+      - name: Build the stack
+        run: docker compose up -d
+
+      - name: Docker PS
+        run: docker ps
+
+      - name: Wait for services health
+        run: |
+          echo "Vérification de l'état de santé des services..."
+          containers=("fastapi-app" "mongo-blog" "mysql-db" "mongo-express" "adminer-sql")
+          
+          for i in {1..12}; do
+            all_healthy=true
+            for container in "${containers[@]}"; do
+              status=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "not-found")
+              echo "Status de $container: $status"
+              if [ "$status" != "healthy" ]; then
+                all_healthy=false
+              fi
+            done
+            
+            if [ "$all_healthy" = true ]; then
+              echo "Tous les conteneurs sont HEALTHY !"
+              exit 0
+            fi
+            
+            echo "En attente... (5s)"
+            sleep 5
+          done
+          
+          echo "Erreur: Certains conteneurs ne sont pas devenus healthy à temps."
+          docker ps
+          exit 1
