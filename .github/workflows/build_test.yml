@@ -136,7 +136,4 @@ jobs:
       - name: Push images to Docker Hub
         run: |
           docker push ${{ vars.DOCKERHUB_USERNAME }}/my-app:v${{ github.run_number }}-${{ github.run_id }}
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/my-app:latest
-          
           docker push ${{ vars.DOCKERHUB_USERNAME }}/my-mongo:v${{ github.run_number }}-${{ github.run_id }}
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/my-mongo:latest
