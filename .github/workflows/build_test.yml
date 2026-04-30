@@ -44,3 +44,12 @@ jobs:
           MONGO_URL: mongodb://localhost:27017
         run: |
           echo "Tests terminés avec succès"
+
+      - name: Docker Scout Scan
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: my-app:1.0.0
+          file: ./api/Dockerfile 
+          only-severities: critical,high
+          exit-code: true          
